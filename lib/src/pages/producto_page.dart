@@ -10,9 +10,11 @@ class ProductoPage extends StatefulWidget {
 
 class _ProductoPageState extends State<ProductoPage> {
   final formKey = GlobalKey<FormState>();
+  final scaffoldKey = GlobalKey<ScaffoldState>();
   final productoProvider = new ProductosProvider();
 
   ProductoModel producto = new ProductoModel();
+  bool _guardando = false;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +26,7 @@ class _ProductoPageState extends State<ProductoPage> {
     }
 
     return Scaffold(
+      key: scaffoldKey,
       appBar: AppBar(
         title: Text('Producto'),
         actions: <Widget>[
@@ -97,7 +100,7 @@ class _ProductoPageState extends State<ProductoPage> {
       textColor: Colors.white,
       label: Text('Guardar'),
       icon: Icon(Icons.save),
-      onPressed: _submit,
+      onPressed: (_guardando) ? null : _submit,
     );
   }
 
@@ -112,15 +115,42 @@ class _ProductoPageState extends State<ProductoPage> {
     );
   }
 
-  void _submit() {
-    if (!formKey.currentState.validate()) return;
+  void _submit() async {
+    if (!formKey.currentState.validate() || _guardando) return;
+
+    setState(() => _guardando = true);
 
     formKey.currentState.save();
 
     if (producto.id == null) {
-      productoProvider.crearProducto(producto);
+      await productoProvider.crearProducto(producto);
     } else {
-      productoProvider.editarProducto(producto);
+      await productoProvider.editarProducto(producto);
     }
+
+    mostrarSnackbar('Registro guardado');
+
+    // Mostrar snackbar y luego cambiar de pantalla
+    new Future.delayed(
+      const Duration(milliseconds: 1800),
+      () => Navigator.pop(context)
+    );
+
+    // Cambiar de pantalla sin mostrar snackbar
+    // Navigator.pop(context);
+
+    // Solo mostrar snackbar
+    // setState(() => _guardando = false);
+
+  }
+
+  void mostrarSnackbar(String mensaje) {
+    final snackbar = SnackBar(
+      content: Text(mensaje),
+      duration: Duration(milliseconds: 1500),
+    );
+
+    scaffoldKey.currentState.showSnackBar(snackbar);
+
   }
 }
